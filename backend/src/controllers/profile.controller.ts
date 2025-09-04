@@ -27,12 +27,15 @@ let userProfile: Profile = {
   name: "Aman Sharma",
   email: "sharmaaman0202@gmail.com",
   education: "B.Tech in Data Science and Engineering ",
-  skills: ["TypeScript", "Node.js", "Express", "Next.js", "Python", "React", "PostgreSQL", "Redis", "Docker", "AWS"],
+  skills: ["TypeScript", "Node.js", "Express", "Next.js", "Python", "React", "PostgreSQL", "Redis", "Docker", "AWS", "Java", "Spring Boot", "MySQL", "Git"],
   work: "Software Engineer at Tech Corp",
   projects: [
     { name: "Personal Portfolio", description: "A site to showcase my work.", technologies: ["React", "TypeScript", "CSS"] },
     { name: "E-commerce API", description: "A RESTful API for an online store.", technologies: ["Node.js", "Express", "TypeScript", "PostgreSQL"] },
-    { name: "Task Management App", description: "A simple app to manage daily tasks.", technologies: ["React", "Redux", "Firebase"] }
+    { name: "Task Management App", description: "A simple app to manage daily tasks.", technologies: ["React", "Redux", "Firebase"] },
+    { name: "Blogging Platform", description: "A full-featured blogging platform.", technologies: ["Java", "Spring Boot", "MySQL"] },
+    { name: "Weather App", description: "A simple weather application.", technologies: ["React", "axios"] },
+    { name: "URL Shortener", description: "A service to shorten long URLs.", technologies: ["Node.js", "Express", "Redis"] }
   ],
   links: ["https://github.com/topics/home-page", "https://in.linkedin.com/"],
 };
@@ -59,11 +62,11 @@ export const updateProfile = (req: Request, res: Response) => {
   res.json(userProfile);
 };
 
-export const getProjectsBySkill = (req: Request<{}, {}, {}, { skill?: string }>, res: Response) => {
+export const getProjects = (req: Request<{}, {}, {}, { skill?: string }>, res: Response) => {
     const skill = req.query.skill;
   
     if (!skill) {
-      return res.status(400).json({ message: "Skill query parameter is required" });
+      return res.json(userProfile.projects);
     }
   
     const relevantProjects = userProfile.projects.filter(project =>

@@ -1,12 +1,11 @@
 import { Router } from "express";
-import { getProfile, updateProfile, getProjectsBySkill, search, healthCheck } from "../controllers/profile.controller";
+import { getProfile, updateProfile, getProjects, search } from "../controllers/profile.controller";
 
 const router = Router();
 
 router.get("/profile", getProfile);
 router.put("/profile", updateProfile);
-router.get("/projects", getProjectsBySkill);
+router.get("/projects", getProjects);
 router.get("/search", search);
-router.get("/health", healthCheck);
 
 export default router;

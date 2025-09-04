@@ -1,88 +1,89 @@
-import pool from "./db";
+import { Pool } from 'pg';
+import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
-interface Project {
-  name: string;
-  description: string;
-  technologies: string[];
-}
+dotenv.config();
 
-interface Profile {
-  name: string;
-  email: string;
-  education: string;
-  skills: string[];
-  work: string;
-  projects: Project[];
-  links: string[];
-}
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
-const seedData: Profile = {
+const profileData = {
   name: "Aman Sharma",
   email: "sharmaaman0202@gmail.com",
-  education: "B.Tech in Data Science and Engineering",
-  skills: ["TypeScript", "Node.js", "Express", "Next.js", "Python", "React", "PostgreSQL", "Redis", "Docker", "AWS"],
-  work: "Software Engineer at Tech Corp",
-  projects: [
-    { name: "Personal Portfolio", description: "A site to showcase my work.", technologies: ["React", "TypeScript", "CSS"] },
-    { name: "E-commerce API", description: "A RESTful API for an online store.", technologies: ["Node.js", "Express", "TypeScript", "PostgreSQL"] },
-    { name: "Task Management App", description: "A simple app to manage daily tasks.", technologies: ["React", "Redux", "Firebase"] }
+  links: {
+    github: "https://github.com/asher09",
+    linkedin: "https://linkedin.com/in/amannsharma",
+    portfolio: "https://portfolio.dev"
+  },
+  skills: ["TypeScript", "React", "Node.js", "PostgreSQL", "Docker", "AWS", ""],
+  education: [
+    {
+      institution: "Manipal University",
+      degree: "B.Tech in Data Science",
+      year: "2022"
+    }
   ],
-  links: ["https://github.com/topics/home-page", "https://in.linkedin.com/"],
+  work: [
+    {
+      company: "Tech Solutions Inc.",
+      position: "Software Engineer",
+      duration: "2021 - Present"
+    }
+  ],
+  projects: [
+    {
+      title: "Portfolio API",
+      description: "The API that powers my personal site.",
+      skills: ["TypeScript", "Node.js", "PostgreSQL"],
+      links: {
+        github: "https://github.com/your-username/portfolio-api"
+      }
+    }
+  ]
 };
 
-const seed = async () => {
-  const client = await pool.connect();
+const main = async () => {
   try {
-    await client.query("BEGIN");
+    // Read and execute the schema file
+    const schemaPath = path.join(__dirname, 'db-schema.sql');
+    const schemaSQL = fs.readFileSync(schemaPath, 'utf8');
+    await pool.query(schemaSQL);
+    console.log('Database schema checked/created successfully.');
 
+    console.log('Starting to seed data...');
     // Clear existing data
-    await client.query("DELETE FROM Project");
-    await client.query("DELETE FROM Profile");
-    console.log("Cleared existing data.");
+    await pool.query('TRUNCATE TABLE profiles RESTART IDENTITY CASCADE;');
+    console.log('Cleared existing data from profiles table.');
 
     // Insert new profile
-    const profileInsertQuery = `
-      INSERT INTO Profile (name, email, education, skills, work, links)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id;
+    const insertQuery = `
+      INSERT INTO profiles (name, email, links, skills, education, work, projects)
+      VALUES ($1, $2, $3, $4, $5, $6, $7);
     `;
-    const profileValues = [
-      seedData.name,
-      seedData.email,
-      seedData.education,
-      seedData.skills,
-      seedData.work,
-      seedData.links,
+    const values = [
+      profileData.name,
+      profileData.email,
+      JSON.stringify(profileData.links),
+      profileData.skills,
+      JSON.stringify(profileData.education),
+      JSON.stringify(profileData.work),
+      JSON.stringify(profileData.projects)
     ];
-    const profileResult = await client.query(profileInsertQuery, profileValues);
-    const profileId = profileResult.rows[0].id;
-    console.log("Inserted new profile with ID:", profileId);
 
-    // Insert projects
-    for (const project of seedData.projects) {
-      const projectInsertQuery = `
-        INSERT INTO Project (profile_id, name, description, technologies)
-        VALUES ($1, $2, $3, $4);
-      `;
-      const projectValues = [
-        profileId,
-        project.name,
-        project.description,
-        project.technologies,
-      ];
-      await client.query(projectInsertQuery, projectValues);
-    }
-    console.log(`Inserted ${seedData.projects.length} projects.`);
-
-    await client.query("COMMIT");
-    console.log("Seed data inserted successfully.");
+    await pool.query(insertQuery, values);
+    console.log('Seed data inserted successfully.');
   } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error seeding data:", error);
+    console.error('Error seeding data:', error);
   } finally {
-    client.release();
-    pool.end();
+    await pool.end();
+    console.log('Database connection pool closed.');
   }
 };
 
-seed();
+main();
+
